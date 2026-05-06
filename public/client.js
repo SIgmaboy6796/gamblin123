@@ -190,6 +190,24 @@ function renderGameUI() {
   } else if (currentGame === 'slots') {
     renderSlotsUI();
   }
+  renderChipSelector(); // update chip selector after any game UI is rendered
+}
+
+// Render chip selector for betting
+function renderChipSelector() {
+  const chipContainer = document.getElementById('chip-selector');
+  if (!chipContainer) return;
+  chipContainer.innerHTML = '';
+  const chipValues = [5, 20, 50, 100, 200, 500, 1000];
+  chipValues.forEach(val => {
+    const chipBtn = document.createElement('button');
+    chipBtn.className = 'chip-btn';
+    chipBtn.textContent = val;
+    chipBtn.onclick = () => {
+      betAmount.value = val;
+    };
+    chipContainer.appendChild(chipBtn);
+  });
 }
 
 /* -------------------- Game-Specific UI Renderers -------------------- */
@@ -265,6 +283,10 @@ function renderRouletteUI() {
 }
 
 function renderBlackjackUI() {
+  // Remove existing blackjack table to avoid duplicates
+  const existingTable = gameArea.querySelector('#blackjack-table');
+  if (existingTable) existingTable.remove();
+
   const container = document.createElement('div');
   container.id = 'blackjack-table';
 
@@ -344,14 +366,15 @@ function renderBlackjackUI() {
 
   playerSection.appendChild(playerCardsDiv);
 
-  // Action buttons (only show if game is not over)
-  if (!blackjackGameOver && blackjackHand.length > 0) {
+  // Action buttons (always show if hand exists)
+  if (blackjackHand.length > 0) {
     const actionButtons = document.createElement('div');
     actionButtons.className = 'action-buttons';
 
     const hitBtn = document.createElement('button');
     hitBtn.className = 'hit-btn';
     hitBtn.textContent = 'Hit';
+    hitBtn.disabled = blackjackGameOver; // Disable after game over
     hitBtn.onclick = () => {
       socket.emit('placeBet', {
         game: 'blackjack',
@@ -368,6 +391,7 @@ function renderBlackjackUI() {
     const standBtn = document.createElement('button');
     standBtn.className = 'stand-btn';
     standBtn.textContent = 'Stand';
+    standBtn.disabled = blackjackGameOver; // Disable after game over
     standBtn.onclick = () => {
       socket.emit('placeBet', {
         game: 'blackjack',
@@ -392,12 +416,18 @@ function renderBlackjackUI() {
     newGameBtn.className = 'new-game-btn';
     newGameBtn.textContent = 'New Game';
     newGameBtn.onclick = () => {
-      // Reset local state and request a new round
+      // Clear the game area and reset state
+      gameArea.innerHTML = '';
       blackjackHand = [];
       blackjackDealerHand = [];
       blackjackDeck = null;
       blackjackGameOver = false;
-      renderBlackjackUI();
+      // Start a new game
+      socket.emit('placeBet', {
+        game: 'blackjack',
+        amount: parseInt(betAmount.value),
+        data: { action: 'start' }
+      });
     };
     container.appendChild(newGameBtn);
   }
