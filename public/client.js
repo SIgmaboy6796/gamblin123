@@ -1,5 +1,12 @@
-const socket = io();
+// Initialize socket with polling fallback for Vercel
+let socket;
+if (window.location.hostname.includes('vercel.app')) {
+  socket = io({ transports: ['polling'], upgrade: false });
+} else {
+  socket = io();
+}
 
+// Game state
 let currentGame = 'coinflip';
 let selectedChoice = null;
 let playerTokens = 1000;
@@ -7,7 +14,7 @@ let blackjackHand = [];
 let blackjackDealerHand = [];
 let blackjackDeck = null;
 let blackjackGameOver = false;
-let currentTable = null;
+let currentTable = '1'; // Default to Table 1
 
 // DOM Elements
 const gameSelect = document.getElementById('gameSelect');
@@ -23,7 +30,20 @@ const chatInput = document.getElementById('chatInput');
 const sendChatBtn = document.getElementById('sendChatBtn');
 const onlineCount = document.getElementById('onlineCount');
 
-// Helper to map card objects to image URLs (Deck of Cards API)
+// Populate table selector with Tables 1-5
+function populateTableSelector() {
+  tableSelect.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const opt = document.createElement('option');
+    opt.value = i.toString();
+    opt.textContent = `Table ${i}`;
+    tableSelect.appendChild(opt);
+  }
+  tableSelect.value = '1'; // Default to Table 1
+}
+populateTableSelector();
+
+// Helper to map card objects to image URLs
 function cardToImage(card) {
   const suitMap = { '♠': 'S', '♥': 'H', '♦': 'D', '♣': 'C' };
   const valueMap = {
@@ -36,12 +56,26 @@ function cardToImage(card) {
 }
 
 /* -------------------- Socket.io Event Handlers -------------------- */
-socket.on('connect', () => console.log('Connected to server'));
+socket.on('connect', () => {
+  console.log('Connected to server');
+  // Auto-join the selected table on connection
+  if (currentTable) {
+    socket.emit('joinTable', currentTable);
+  }
+});
 
 socket.on('init', (data) => {
   playerTokens = data.tokens;
   updateTokens();
   renderGameUI();
+});
+
+socket.on('onlineCount', (count) => {
+  onlineCount.textContent = count;
+});
+
+socket.on('tablePlayers', (playerList) => {
+  console.log('Table players:', playerList);
 });
 
 socket.on('players', updatePlayerList);
@@ -61,7 +95,7 @@ socket.on('betResult', (result) => {
   // Update blackjack state if present
   if (result.hand) blackjackHand = result.hand;
   if (result.dealerHand) blackjackDealerHand = result.dealerHand;
-  if (result.deck) blackjackDeck = result.deck; // Fixed typo: decker → deck
+  if (result.deck) blackjackDeck = result.deck;
 
   // Track game over state for Blackjack
   if (result.details && (result.details.includes('Dealer wins') || result.details.includes('You win') || result.details.includes('Push'))) {
@@ -155,28 +189,8 @@ function addChatMessage(sender, message) {
 }
 
 function updatePlayerList(playersArray) {
-  // Update online count
-  onlineCount.textContent = playersArray.length;
-
-  // Update table selector with available tables
-  const tables = new Set();
-  playersArray.forEach(p => {
-    if (p.table) tables.add(p.table);
-  });
-
-  const currentSelection = tableSelect.value;
-  tableSelect.innerHTML = '<option value="">Solo Play</option>';
-  tables.forEach(table => {
-    const option = document.createElement('option');
-    option.value = table;
-    option.textContent = `Table ${table}`;
-    tableSelect.appendChild(option);
-  });
-
-  // Restore current selection if still valid
-  if ([...tables].includes(currentSelection)) {
-    tableSelect.value = currentSelection;
-  }
+  // Table list is now static (Tables 1-5)
+  // This function kept for compatibility
 }
 
 function renderGameUI() {
@@ -190,7 +204,7 @@ function renderGameUI() {
   } else if (currentGame === 'slots') {
     renderSlotsUI();
   }
-  renderChipSelector(); // update chip selector after any game UI is rendered
+  renderChipSelector();
 }
 
 // Render chip selector for betting
@@ -374,7 +388,7 @@ function renderBlackjackUI() {
     const hitBtn = document.createElement('button');
     hitBtn.className = 'hit-btn';
     hitBtn.textContent = 'Hit';
-    hitBtn.disabled = blackjackGameOver; // Disable after game over
+    hitBtn.disabled = blackjackGameOver;
     hitBtn.onclick = () => {
       socket.emit('placeBet', {
         game: 'blackjack',
@@ -391,7 +405,7 @@ function renderBlackjackUI() {
     const standBtn = document.createElement('button');
     standBtn.className = 'stand-btn';
     standBtn.textContent = 'Stand';
-    standBtn.disabled = blackjackGameOver; // Disable after game over
+    standBtn.disabled = blackjackGameOver;
     standBtn.onclick = () => {
       socket.emit('placeBet', {
         game: 'blackjack',
@@ -416,13 +430,11 @@ function renderBlackjackUI() {
     newGameBtn.className = 'new-game-btn';
     newGameBtn.textContent = 'New Game';
     newGameBtn.onclick = () => {
-      // Clear the game area and reset state
       gameArea.innerHTML = '';
       blackjackHand = [];
       blackjackDealerHand = [];
       blackjackDeck = null;
       blackjackGameOver = false;
-      // Start a new game
       socket.emit('placeBet', {
         game: 'blackjack',
         amount: parseInt(betAmount.value),
@@ -435,7 +447,6 @@ function renderBlackjackUI() {
   // Assemble container
   container.appendChild(dealerSection);
   container.appendChild(playerSection);
-
   gameArea.appendChild(container);
 }
 
@@ -495,7 +506,6 @@ function renderSlotsUI() {
   container.appendChild(reelsDiv);
   container.appendChild(spinBtn);
   container.appendChild(paytable);
-
   gameArea.appendChild(container);
 }
 

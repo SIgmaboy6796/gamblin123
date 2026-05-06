@@ -131,15 +131,15 @@
 - Gameplay: Player places bet, spins reels, matching symbols pay out
 
 ## 5. Task Checklist (Progress Tracking)
-- [ ] Scaffold project and install dependencies
-- [ ] Implement server with Express & Socket.io
+- [✅] Scaffold project and install dependencies
+- [✅] Implement server with Express & Socket.io
 - [ ] Design data structures for players and balances
 - [ ] Implement core multiplayer Socket.io logic
-- [ ] Implement Coin Flip core logic
-- [ ] Implement Roulette core logic
-- [ ] Implement Blackjack core logic
-- [ ] Implement Slot Machine core logic
-- [ ] Create base client UI (HTML/CSS)
+- [✅] Implement Coin Flip core logic
+- [✅] Implement Roulette core logic
+- [✅] Implement Blackjack core logic
+- [✅] Implement Slot Machine core logic
+- [✅] Create base client UI (HTML/CSS)
 - [ ] Implement client-side Socket.io logic
 - [ ] Add Coin Flip UI & animations
 - [ ] Add Roulette UI, canvas wheel & animations
