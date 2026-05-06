@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fake Money Multiplayer Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Fake Money Casino</h1>
+      <div id="balance">Tokens: 1000</div>
+    </header>
+
+    <div id="player-count">Players online: <span id="onlineCount">0</span></div>
+
+    <div id="table-selector">
+      <label for="tableSelect">Table:</label>
+      <select id="tableSelect">
+        <option value="">Solo Play</option>
+      </select>
+    </div>
+
+    <div id="game-selector">
+      <label for="gameSelect">Choose game:</label>
+      <select id="gameSelect">
+        <option value="coinflip">Coin Flip</option>
+        <option value="roulette">Roulette</option>
+        <option value="blackjack">Blackjack</option>
+        <option value="slots">Slot Machine</option>
+      </select>
+    </div>
+
+    <div id="game-area">
+      <!-- Game specific UI will be injected -->
+    </div>
+
+    <div id="bet-panel">
+      <input type="number" id="betAmount" min="1" placeholder="Bet amount" />
+      <button id="placeBetBtn">Place Bet</button>
+    </div>
+
+    <div id="result" class="hidden"></div>
+
+    <div id="chat-container">
+      <div id="chat-messages"></div>
+      <div id="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Type a message..." />
+        <button id="sendChatBtn">Send</button>
+      </div>
+    </div>
+
+    <footer>
+      <button id="resetBtn">Reset Balance (reload page)</button>
+    </footer>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
